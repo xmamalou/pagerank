@@ -1,6 +1,6 @@
-# PARALLEL SYSTEMS -- EXERCISE BATCH 1
+# PARALLEL SYSTEMS -- PAGERANK IMPLEMENTATION
 
-These are my solutions to the *Parallel Systems* course of the "Computer Engineering" Masters of NKUA.
+This is my pagerank implementation for the extra project of the "Parallel Systems" course of the Computer Engineering Masters of NKUA.
 
 ## HOW TO BUILD
 Building is easy and automated; just use one of the script files provided in the `scripts/` directory. You need CMake to build this project.

@@ -18,6 +18,7 @@
 
 #include "pagerank.h"
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,12 +27,20 @@
 
 #include "utility.h"
 
-// -- TYPES --- //
+// --- ERROR CODES --- //
+
+#define SUCCESS 0
+#define FILE_NOT_FOUND_ERR 1
+#define FILE_EMPTY_ERR 2
+
+// --- TYPES --- //
 
 typedef struct PROptions {
     bool     do_serial;
     char     path[PATH_MAX];    
-    bool     is_path_local; 
+    bool     is_path_local;
+    double   dump_factor;
+    MATRIX_T trans_matrix;
 } PROptions;
 
 // --- CONSTANTS --- //
@@ -57,7 +66,7 @@ void read_flags_ex1(
 /// @param dim the dimensions of the matrix (since it's square, `x_dim = y_dim`) 
 /// @return `NULL` if the matrix is invalid (i.e. it's not square or the sum of column elements
 /// is not zero) otherwise a pointer to the matrix
-double** parse_transmatrix(
+MATRIX_T parse_transmatrix(
         const FILE* data, const uint64_t line_count);
 
 inline void pagerank_serial(const PROptions* const options_p);
@@ -70,6 +79,8 @@ uint32_t pagerank(
     PROptions options = {
         .do_serial     = true,
         .is_path_local = false,
+        .dump_factor   = 0,
+        .trans_matrix  = NULL,
     };
     read_flags_ex1(
             flags, flag_count,
@@ -91,20 +102,19 @@ uint32_t pagerank(
     if (data == NULL)
     {
         printf("\x1b[31mERROR! File couldn't be found! Does it exist?\n\x1b[0m");
-        return 1;
+        return FILE_NOT_FOUND_ERR;
     }
 
     // parse data file
-    double dump_factor = 0;
     if (fgets(
             full_path, 
             max_size, 
             data) != NULL)
     {
-        dump_factor = atof(full_path);
+        options.dump_factor = atof(full_path);
     } else {
         printf("\x1b[31mERROR! File is empty!\n\x1b[0m");
-        return 2;
+        return FILE_EMPTY_ERR;
     }
     uint64_t line_count = 0;
     // we do a first run-through so we can be sure of how much space we need
@@ -120,7 +130,7 @@ uint32_t pagerank(
     fseek(
             data,
             1, SEEK_SET);
-    double** matrix = parse_transmatrix(
+    options.trans_matrix = parse_transmatrix(
             (const FILE*)data, line_count); 
 
     printf("\x1b[33mParallel Systems Postgrad Course -- Extra Project -- Christoforos-Marios Mamaloukas\n\n"
@@ -132,8 +142,16 @@ uint32_t pagerank(
         "-------------------------------------\n\n\x1b[0m", 
         exercise_type[0],
         options.path,
-        dump_factor,
+        options.dump_factor,
         line_count, line_count);
+
+    for(uint32_t i = 0; i < line_count; i++)
+    {
+        for(uint32_t j = 0; j < line_count; j++)
+        {
+            printf("%f; ", get_element(options.trans_matrix, i, j));
+        }
+    }
 
     if (options.do_serial)
     {
@@ -142,7 +160,7 @@ uint32_t pagerank(
 
     fclose(data);
 
-    return 0;
+    return SUCCESS;
 }
 
 void read_flags_ex1(
@@ -197,17 +215,37 @@ void read_flags_ex1(
     }
 }
 
-double** parse_transmatrix(
+// TODO: Parser is buggy; some values are misparsed
+MATRIX_T parse_transmatrix(
     const FILE* data, const uint64_t line_count) 
 {
+    MATRIX_T matrix = create_matrix(2, line_count, line_count);
 
+    uint32_t curr_row  = 0;
+    char*    curr_line = NULL;
+    size_t   len       = 0;
+    getline(&curr_line, &len, data); // Getting rid of the first line
+    while (getline(&curr_line, &len, data) != -1)
+    {
+        uint32_t curr_column = 0;
+        char*    substr      = strtok(curr_line, "; ");
+        while (substr != NULL)
+        {
+            set_element(
+                matrix,
+                atof(substr),
+                curr_column, curr_row);
+            curr_column++;
+            substr = strtok(0, "; ");
+        }
+        curr_row++;
+    }
+    return matrix;
 }
 
 void pagerank_serial(const PROptions* const options_p) 
 {
-    
 
-    
 
     return;
 }

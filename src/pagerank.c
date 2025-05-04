@@ -35,13 +35,14 @@
 
 // --- TYPES --- //
 
-typedef struct PROptions {
+typedef struct Options {
     bool     do_serial;
     char     path[PATH_MAX];    
     bool     is_path_local;
     double   dump_factor;
     MATRIX_T trans_matrix;
-} PROptions;
+    uint32_t iterations;
+} Options;
 
 // --- CONSTANTS --- //
 
@@ -58,7 +59,7 @@ const uint64_t max_size = 256;
 
 void read_flags_ex1(
         const char** flags, const uint32_t flag_count,
-        PROptions* options_p);
+        Options* options_p);
 
 /// @brief Parse lines into a valid PageRank transition matrix
 /// @param lines the lines to parse
@@ -69,14 +70,14 @@ void read_flags_ex1(
 MATRIX_T parse_transmatrix(
         const FILE* data, const uint64_t line_count);
 
-inline void pagerank_serial(const PROptions* const options_p);
+inline void pagerank_serial(const Options* const options_p);
 
 // --- FUNCTION DEFINITIONS --- //
 
 uint32_t pagerank(
         const char** flags, const uint32_t flag_count) 
 {
-    PROptions options = {
+    Options options = {
         .do_serial     = true,
         .is_path_local = false,
         .dump_factor   = 0,
@@ -101,7 +102,8 @@ uint32_t pagerank(
             "r");
     if (data == NULL)
     {
-        printf("\x1b[31mERROR! File couldn't be found! Does it exist?\n\x1b[0m");
+        fprintf(stderr,
+                "\x1b[31mERROR! File couldn't be found! Does it exist?\n\x1b[0m");
         return FILE_NOT_FOUND_ERR;
     }
 
@@ -113,7 +115,8 @@ uint32_t pagerank(
     {
         options.dump_factor = atof(full_path);
     } else {
-        printf("\x1b[31mERROR! File is empty!\n\x1b[0m");
+        fprintf(stderr,
+                "\x1b[31mERROR! File is empty!\n\x1b[0m");
         return FILE_EMPTY_ERR;
     }
     uint64_t line_count = 0;
@@ -151,13 +154,17 @@ uint32_t pagerank(
         {
             printf("%f; ", get_element(options.trans_matrix, i, j));
         }
+        printf("\n");
     }
+
+    printf("\n");
 
     if (options.do_serial)
     {
-        pagerank_serial((const PROptions* const)&options);
+        pagerank_serial((const Options* const)&options);
     } 
 
+    destroy_matrix(options.trans_matrix);
     fclose(data);
 
     return SUCCESS;
@@ -165,7 +172,7 @@ uint32_t pagerank(
 
 void read_flags_ex1(
     const char** flags, const uint32_t flag_count,
-    PROptions* options_p)
+    Options* options_p)
 {
     for (uint32_t i = 0; i < flag_count; i++)
     {
@@ -207,11 +214,11 @@ void read_flags_ex1(
         //     options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
         // }
 
-        // if (strstr(flags[i], "-fthrows=") != NULL || strstr(flags[i], "-fn=") != NULL)
-        // {
-        //     char* equal_char_p     = strchr(flags[i], '=');
-        //     options_p->throw_count = atoll(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        // }
+        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-fn=") != NULL)
+        {
+            char* equal_char_p    = strchr(flags[i], '=');
+            options_p->iterations = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
+        }
     }
 }
 
@@ -219,15 +226,15 @@ void read_flags_ex1(
 MATRIX_T parse_transmatrix(
     const FILE* data, const uint64_t line_count) 
 {
-    MATRIX_T matrix = create_matrix(2, line_count, line_count);
+    MATRIX_T matrix = create_matrix(line_count, line_count);
 
-    uint32_t curr_row  = 0;
+    uint32_t curr_column  = 0;
     char*    curr_line = NULL;
     size_t   len       = 0;
     getline(&curr_line, &len, data); // Getting rid of the first line
     while (getline(&curr_line, &len, data) != -1)
     {
-        uint32_t curr_column = 0;
+        uint32_t curr_row = 0;
         char*    substr      = strtok(curr_line, "; ");
         while (substr != NULL)
         {
@@ -235,17 +242,74 @@ MATRIX_T parse_transmatrix(
                 matrix,
                 atof(substr),
                 curr_column, curr_row);
-            curr_column++;
+            curr_row++;
             substr = strtok(0, "; ");
         }
-        curr_row++;
+        curr_column++;
     }
     return matrix;
 }
 
-void pagerank_serial(const PROptions* const options_p) 
+void pagerank_serial(const Options* const options_p) 
 {
+    uint32_t x; 
+    get_dimensions(options_p->trans_matrix, &x, &x); // Matrix is square
 
+    MATRIX_T added_vector = create_matrix(x, 1);
+    MATRIX_T initial_vector  = create_matrix(x, 1);
+    for (uint32_t i = 0; i < x; i++)
+    {
+        set_element(
+                added_vector, 
+                1.0 - options_p->dump_factor, 
+                i, 0);
+        set_element(
+                initial_vector, 
+                0.0, 
+                i, 0);
+    }
+
+    for (uint32_t i = 0; i < options_p->iterations; i++)
+    {
+        // not a new handle
+        /*
+        * J_1 = d*W
+        */
+        MATRIX_T intrm_matrix_h = mul_factor(
+                options_p->dump_factor,
+                options_p->trans_matrix);
+
+        // new handle
+        /*
+        * J_2 = J_1*x
+        */
+        intrm_matrix_h = mul_matrix(
+                intrm_matrix_h,
+                initial_vector);
+
+        // not a new handle
+        /*
+        * J_3 = d*W*x + (1-d)*I
+        */
+        intrm_matrix_h = add_matrix(
+                intrm_matrix_h,
+                added_vector);
+
+        copy_matrix(initial_vector, intrm_matrix_h);
+
+        // the second function that returned intrm_matrix_h 
+        // created a new handle, so we need to destroy it
+        destroy_matrix(intrm_matrix_h);
+    }
+
+    for(uint32_t i = 0; i < x; i++)
+    {
+        printf("%f; ", get_element(initial_vector, i, 0));
+        printf("\n");
+    }
+
+    destroy_matrix(initial_vector);
+    destroy_matrix(added_vector);
 
     return;
 }

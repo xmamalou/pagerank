@@ -35,7 +35,6 @@ typedef struct Benchmark {
 
 typedef struct Matrix {
     uint32_t dims[2];
-    uint8_t  degree;
     double*  matrix;
 } Matrix;
 
@@ -67,105 +66,179 @@ uint64_t stop_benchmark(BENCHMARK_T handle)
 }
 
 MATRIX_T create_matrix(
-    uint32_t dim_num,
-    ...)
+        uint32_t  x, 
+        uint32_t  y)
 {
-    assert(dim_num < 3 && dim_num > 0);
-
     uint32_t element_num;
     Matrix* matrix_p = (Matrix*)calloc(1, sizeof(Matrix));
 
-    matrix_p->degree = dim_num;
-
-    va_list args;
-    va_start(args, dim_num);
-    for (uint32_t i = 0; i < dim_num; i++)
-    {
-        uint32_t dim = (uint32_t)va_arg(args, uint32_t);
-        matrix_p->dims[i] = dim; 
-        element_num *= dim;
-    }
-    va_end(args);
+    matrix_p->dims[0] = x;
+    matrix_p->dims[1] = y;
 
     matrix_p->matrix = (double*)calloc(element_num, sizeof(double));
 
     return (MATRIX_T)matrix_p;
 }
 
-void set_element(
-    MATRIX_T matrix_h,
-    double   element,
-    ...)
+void get_dimensions(
+        MATRIX_T  matrix_h,
+        uint32_t* x, 
+        uint32_t* y)
 {
     Matrix* matrix_p = (Matrix*)matrix_h;
-    va_list args;
+    *x = matrix_p->dims[0];
+    *y = matrix_p->dims[1];
+}
 
-    va_start(args, element);
-    uint32_t x = (uint32_t)va_arg(args, uint32_t);
-    uint32_t y = (uint32_t)va_arg(args, uint32_t);
-    va_end(args);
+void set_element(
+        MATRIX_T matrix_h,
+        double   element,
+        uint32_t x, 
+        uint32_t y)
+{
+    Matrix* matrix_p = (Matrix*)matrix_h;
 
     matrix_p->matrix[x + matrix_p->dims[1]*y] = element;
 }
 
 double get_element(
-    MATRIX_T matrix_h,
-    ...)
+        MATRIX_T matrix_h,
+        uint32_t x, 
+        uint32_t y)
 {
     Matrix* matrix_p = (Matrix*)matrix_h;
-    va_list args;
-
-    va_start(args, matrix_h);
-    uint32_t x = (uint32_t)va_arg(args, uint32_t);
-    uint32_t y = (uint32_t)va_arg(args, uint32_t);
-    va_end(args);
 
     return matrix_p->matrix[x + matrix_p->dims[1]*y];
 }
 
-void mul_factor(
+void copy_matrix(
+    MATRIX_T dest_h,
+    MATRIX_T source_h)
+{
+    uint32_t x1, x2, y1, y2;
+    get_dimensions(
+            dest_h,
+            &x1, &y1);
+    get_dimensions(
+            source_h,
+            &x2, &y2);    
+            
+    if (x1 != x2 && y1 != y2)
+    {
+        return;
+    }
+
+    for (uint32_t i = 0; i < x1; i++)
+    {
+        for (uint32_t j = 0; j < y1; j++)
+        {
+            set_element(
+                    dest_h, 
+                    get_element(source_h,
+                        i, j), 
+                    i, j);
+        }
+    }
+}
+
+MATRIX_T add_matrix(
+    MATRIX_T left_h,
+    MATRIX_T right_h)
+{
+    uint32_t x1, x2, y1, y2;
+    get_dimensions(
+            left_h,
+            &x1, &y1);
+    get_dimensions(
+            right_h,
+            &x2, &y2);    
+            
+    if (x1 != x2 && y1 != y2)
+    {
+        return NULL;
+    }
+
+    for (uint32_t i = 0; i < x1; i++)
+    {
+        for (uint32_t j = 0; j < y1; j++)
+        {
+            set_element(
+                    left_h, 
+                    get_element(left_h, 
+                            i, j) + get_element(right_h,
+                            i, j), 
+                    i, j);
+        }
+    }
+
+    return left_h;
+}
+
+MATRIX_T mul_factor(
     double   factor,
     MATRIX_T matrix_h)
 {
-    Matrix* matrix_p = (Matrix*)matrix_h;
+    uint32_t x, y;
+    get_dimensions(
+            matrix_h,
+            &x, &y);
 
-    for (uint32_t i = 0; i < matrix_p->dims[0]; i++)
+    for (uint32_t i = 0; i < x; i++)
     {
-        for (uint32_t j = 0; j < matrix_p->dims[1]; j++)
+        for (uint32_t j = 0; j < y; j++)
         {
-            set_element(matrix_h, factor, i, j);
+            set_element(
+                    matrix_h, 
+                    factor*get_element(matrix_h,
+                            i, j), 
+                    i, j);
         }
     }
+
+    return matrix_h;
 }
 
 MATRIX_T mul_matrix(
     MATRIX_T  left_h,
     MATRIX_T  right_h)
 {
-    Matrix* left_p = (Matrix*)left_h;
-    Matrix* right_p = (Matrix*)right_h;
+    uint32_t x1, x2, y1, y2;
+    get_dimensions(
+            left_h,
+            &x1, &y1);
+    get_dimensions(
+            right_h,
+            &x2, &y2); 
 
-    if (left_p->dims[1] == right_p->dims[0])
+    if (y1 != x2)
     {
         return NULL;
     }
 
     MATRIX_T result_h = create_matrix(
-            2,
-            left_p->dims[0], right_p->dims[1]);
+            x1, y2);
 
-    for (uint32_t i = 0; i < left_p->dims[0]; i++)
+    for (uint32_t i = 0; i < x1; i++)
     {
-        for (uint32_t j = 0; j < right_p->dims[1]; j++)
+        for (uint32_t j = 0; j < y2; j++)
         {
-            double dot = 0;
-            for (uint32_t k = 0; k < right_p->dims[0]; k++)
+            double dot = 0.0;
+            for (uint32_t k = 0; k < x2; k++)
             {        
-                dot += get_element(left_h, i, k)*get_element(right_h, k, j);
+                dot += get_element(
+                        left_h, 
+                        i, k)*get_element(
+                                right_h, 
+                                k, j);
             }         
-            set_element(result_h, dot, i, j);
+            set_element(
+                    result_h, 
+                    dot, 
+                    i, j);
         }
     }
+
+    return (MATRIX_T)result_h;
 }
 
 void destroy_matrix(MATRIX_T matrix_h)

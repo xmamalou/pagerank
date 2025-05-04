@@ -53,41 +53,69 @@ typedef HANDLE_BUILDER(Matrix);
 
 /// @brief Create a matrix
 /// @param dim_num the degree of the matrix
-/// @param x... the dimensions of the matrix
-/// @return a handle to the created matrix, `NULL` otherwise
-MATRIX_T create_matrix(
-        uint32_t dim_num,
-        ...);
+/// @param x the column coordinate of the element
+/// @param y.the row coordinate of the element
+inline MATRIX_T create_matrix(
+        uint32_t x, 
+        uint32_t y);
+
+/// @brief Get the dimensions of a matrix
+/// @param matrix_h The handle of the matrix
+/// @param x The number of columns
+/// @param y The number of rows
+inline void get_dimensions(
+        MATRIX_T  matrix_h,
+        uint32_t* x, 
+        uint32_t* y);
 
 /// @brief Set an element on a matrix
 /// @param matrix_h the matrix to traverse
 /// @param element the variable to write from
 /// @param x the column coordinate of the element
-/// @param y... the other coordinates of the element
+/// @param y.the row coordinate of the element
 inline void set_element(
-    MATRIX_T matrix_h,
-    double   element,
-    ...);
+        MATRIX_T matrix_h,
+        double   element,
+        uint32_t x, 
+        uint32_t y);
 
 /// @brief Get an element from a matrix
 /// @param matrix_h the matrix to traverse
 /// @param x the column coordinate of the element
-/// @param y... the other coordinates of the element
+/// @param y the row coordinate of the element
+/// @return the element at `matrix_h[x, y]`
 inline double get_element(
         MATRIX_T matrix_h,
-        ...);
+        uint32_t x, 
+        uint32_t y);
+
+/// @brief Copy a matrix's elements to another matrix. Fails gracefully if the operation is illegal
+/// @param dest_h the destination matrix
+/// @param source_h the source matrix
+inline void copy_matrix(
+        MATRIX_T dest_h,
+        MATRIX_T source_h);
+
+/// @brief Add two matrices together
+/// @param left_h the left matrix
+/// @param right_h the right matrix
+/// @return `left_h` if the operation is legal. `NULL` otherwise
+inline MATRIX_T add_matrix(
+        MATRIX_T left_h,
+        MATRIX_T right_h);
 
 /// @brief Multiply a matrix by a factor
 /// @param factor the factor to multiply by
 /// @param matrix_h the matrix to multiply with
-inline void mul_factor(
+/// @return `left_h`
+inline MATRIX_T mul_factor(
         double   factor,
         MATRIX_T matrix_h);
 
 /// @brief Multiply two matrices together
 /// @param left_h the left matrix
 /// @param right_h the right matrix
-/// @return a matrix handle if the operation is legal. `NULL` otherwise
+/// @return a new matrix handle if the operation is legal. `NULL` otherwise
 MATRIX_T mul_matrix(
         MATRIX_T left_h,
         MATRIX_T right_h);

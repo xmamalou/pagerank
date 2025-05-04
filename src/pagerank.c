@@ -222,7 +222,6 @@ void read_flags_ex1(
     }
 }
 
-// TODO: Parser is buggy; some values are misparsed
 MATRIX_T parse_transmatrix(
     const FILE* data, const uint64_t line_count) 
 {

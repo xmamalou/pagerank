@@ -69,12 +69,12 @@ MATRIX_T create_matrix(
         uint32_t  x, 
         uint32_t  y)
 {
-    uint32_t element_num;
     Matrix* matrix_p = (Matrix*)calloc(1, sizeof(Matrix));
 
     matrix_p->dims[0] = x;
     matrix_p->dims[1] = y;
-
+    
+    uint32_t element_num = x*y;
     matrix_p->matrix = (double*)calloc(element_num, sizeof(double));
 
     return (MATRIX_T)matrix_p;

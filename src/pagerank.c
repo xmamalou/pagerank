@@ -255,8 +255,11 @@ void pagerank_serial(const Options* const options_p)
     uint32_t x; 
     get_dimensions(options_p->trans_matrix, &x, &x); // Matrix is square
 
-    MATRIX_T added_vector = create_matrix(x, 1);
-    MATRIX_T initial_vector  = create_matrix(x, 1);
+    MATRIX_T multiplied_trans_matrix = mul_factor(
+            options_p->dump_factor,
+            options_p->trans_matrix);
+    MATRIX_T added_vector       = create_matrix(x, 1);
+    MATRIX_T initial_vector     = create_matrix(x, 1);
     for (uint32_t i = 0; i < x; i++)
     {
         set_element(
@@ -271,25 +274,17 @@ void pagerank_serial(const Options* const options_p)
 
     for (uint32_t i = 0; i < options_p->iterations; i++)
     {
-        // not a new handle
-        /*
-        * J_1 = d*W
-        */
-        MATRIX_T intrm_matrix_h = mul_factor(
-                options_p->dump_factor,
-                options_p->trans_matrix);
-
         // new handle
         /*
-        * J_2 = J_1*x
+        * J_1 = d*W*x
         */
-        intrm_matrix_h = mul_matrix(
-                intrm_matrix_h,
+        MATRIX_T intrm_matrix_h = mul_matrix(
+                multiplied_trans_matrix,
                 initial_vector);
 
         // not a new handle
         /*
-        * J_3 = d*W*x + (1-d)*I
+        * J_2 = d*W*x + (1-d)*I
         */
         intrm_matrix_h = add_matrix(
                 intrm_matrix_h,
@@ -297,7 +292,7 @@ void pagerank_serial(const Options* const options_p)
 
         copy_matrix(initial_vector, intrm_matrix_h);
 
-        // the second function that returned intrm_matrix_h 
+        // the firstfunction that returned intrm_matrix_h 
         // created a new handle, so we need to destroy it
         destroy_matrix(intrm_matrix_h);
     }

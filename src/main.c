@@ -87,6 +87,7 @@ int main(
                 " be laid in\n\tthe following way: One line containing the \x1b[1mdumping factor\x1b[m\x1b[33m (between 0 and 1)"
                 " and the\n\trest containing the \x1b[1mtransition matrix\x1b[m\x1b[33m, where every row's elements are delimited with\n\t`;`"
                 " and every row is on a new line\n"
+                "\t* -ftries=<number>, -fn=<number>: Number of iterations for the algorithm\n"
                 "\x1b[0m");
         return 0;
     }

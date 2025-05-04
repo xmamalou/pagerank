@@ -280,15 +280,15 @@ void pagerank_serial(const Options* const options_p)
         */
         MATRIX_T intrm_matrix_h = mul_matrix(
                 multiplied_trans_matrix,
-                initial_vector);
+                initial_vector); 
 
         // not a new handle
         /*
         * J_2 = d*W*x + (1-d)*I
         */
-        intrm_matrix_h = add_matrix(
+        add_matrix(
                 intrm_matrix_h,
-                added_vector);
+                added_vector); // we ignore the result, because it's just intrm_matrix_h
 
         copy_matrix(initial_vector, intrm_matrix_h);
 

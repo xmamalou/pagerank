@@ -243,5 +243,6 @@ MATRIX_T mul_matrix(
 
 void destroy_matrix(MATRIX_T matrix_h)
 {
+    free(((Matrix*)matrix_h)->matrix);
     free((void*)matrix_h);
 }

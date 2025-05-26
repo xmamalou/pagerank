@@ -23,6 +23,7 @@ pub const Options = struct {
     command: *const fn (Options) Error!void = print_help,
     iterations: u64 = 1,
     dumping: f64 = 0.5,
+    dims: [2]u64 = [_]u64{ 2, 2 },
     tries: u64 = 1,
 };
 
@@ -32,6 +33,7 @@ pub const Error = error{
     INSUFFICIENT_COMMANDS_ERR,
     INVALID_CMD_ARG_ERR,
     IO_ERR,
+    OOM_ERR,
     MEM_ERR,
 };
 
@@ -115,6 +117,25 @@ fn read_args(
                     "--d",
                 },
             ) orelse options.dumping;
+
+            // The x dimension of the matrix
+            options.dims[0] = try set_option(
+                arg,
+                next_arg,
+                u64,
+                &[_][]const u8{
+                    "--x",
+                },
+            ) orelse options.dims[0];
+
+            options.dims[1] = try set_option(
+                arg,
+                next_arg,
+                u64,
+                &[_][]const u8{
+                    "--y",
+                },
+            ) orelse options.dims[1];
 
             // Tries for the experiment
             options.tries = try set_option(

@@ -2,3 +2,4 @@
 build/
 papers/
 zig-out/
+.zig-cache/

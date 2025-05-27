@@ -119,23 +119,24 @@ fn read_args(
             ) orelse options.dumping;
 
             // The x dimension of the matrix
-            options.dims[0] = try set_option(
-                arg,
-                next_arg,
-                u64,
-                &[_][]const u8{
-                    "--x",
-                },
-            ) orelse options.dims[0];
-
-            options.dims[1] = try set_option(
-                arg,
-                next_arg,
-                u64,
-                &[_][]const u8{
-                    "--y",
-                },
-            ) orelse options.dims[1];
+            options.dims = [_]u64{
+                try set_option(
+                    arg,
+                    next_arg,
+                    u64,
+                    &[_][]const u8{
+                        "--x",
+                    },
+                ) orelse options.dims[0],
+                try set_option(
+                    arg,
+                    next_arg,
+                    u64,
+                    &[_][]const u8{
+                        "--y",
+                    },
+                ) orelse options.dims[1],
+            };
 
             // Tries for the experiment
             options.tries = try set_option(

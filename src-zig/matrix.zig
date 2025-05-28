@@ -179,13 +179,17 @@ pub fn multiply_matrix(
 
     for (0..new_matrix.x) |i| {
         for (0..new_matrix.y) |j| {
-            for (0..self.y) |k| {
-                _ = new_matrix.set(
-                    i,
-                    j,
-                    self.get(i, k) * self.get(k, j),
-                );
-            }
+            _ = new_matrix.set(
+                i,
+                j,
+                value: {
+                    var sum: f64 = 0.0;
+                    for (0..self.y) |k| {
+                        sum += self.get(i, k) * self.get(k, j);
+                    }
+                    break :value sum;
+                },
+            );
         }
     }
 

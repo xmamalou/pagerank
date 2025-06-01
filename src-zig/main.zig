@@ -32,6 +32,7 @@ pub const Error = error{
     NO_VALUE_ERR,
     INSUFFICIENT_COMMANDS_ERR,
     INVALID_CMD_ARG_ERR,
+    NO_CMD_ERR,
     IO_ERR,
     OOM_ERR,
     MEM_ERR,
@@ -56,101 +57,9 @@ fn read_args(
     var options = Options{};
 
     options.app_name = arguments_p.*.next().?;
+    const command = arguments_p.*.next();
 
-    while (arguments_p.*.next()) |arg| {
-        if (arg.len > 2 and std.mem.eql( // argument is a flag
-            u8,
-            arg[0..2],
-            "-f",
-        )) {
-            options.do_serial = set_flag(
-                arg,
-                &[_][]const u8{
-                    "-fserial",
-                    "-fs",
-                },
-            ) orelse options.do_serial;
-
-            options.do_serial = !(set_flag(
-                arg,
-                &[_][]const u8{
-                    "-fparallel",
-                    "-fp",
-                },
-            ) orelse !options.do_serial);
-        } else if (arg.len > 2 and std.mem.eql( // argument is an option
-            u8,
-            arg[0..2],
-            "--",
-        )) {
-            const next_arg = arguments_p.*.next();
-
-            // File path to save the data too
-            options.file_path = try set_option(
-                arg,
-                next_arg,
-                []const u8,
-                &[_][]const u8{
-                    "--filepath",
-                    "--f",
-                },
-            ) orelse options.file_path;
-
-            // How many iterations to run the algorithm for
-            options.iterations = try set_option(
-                arg,
-                next_arg,
-                u64,
-                &[_][]const u8{
-                    "--iter",
-                    "--n",
-                },
-            ) orelse options.iterations;
-
-            // The dumping factor
-            options.dumping = try set_option(
-                arg,
-                next_arg,
-                f64,
-                &[_][]const u8{
-                    "--dumping",
-                    "--d",
-                },
-            ) orelse options.dumping;
-
-            // The x dimension of the matrix
-            options.dims = [_]u64{
-                try set_option(
-                    arg,
-                    next_arg,
-                    u64,
-                    &[_][]const u8{
-                        "--x",
-                    },
-                ) orelse options.dims[0],
-                try set_option(
-                    arg,
-                    next_arg,
-                    u64,
-                    &[_][]const u8{
-                        "--y",
-                    },
-                ) orelse options.dims[1],
-            };
-
-            // Tries for the experiment
-            options.tries = try set_option(
-                arg,
-                next_arg,
-                u64,
-                &[_][]const u8{
-                    "--tries",
-                    "--t",
-                },
-            ) orelse options.tries;
-        }
-
-        // if the above checks fail, the argument might be a command
+    if (command) |arg| {
         options.command = try set_commands(
             arg,
             &[_][]const u8{
@@ -161,7 +70,118 @@ fn read_args(
                 print_help,
                 Pagerank.pagerank,
             },
-        ) orelse options.command;
+        ) orelse {
+            try stdout.print(
+                "ERROR!! Command {s} NOT recognized!\n\n",
+                .{arg},
+            );
+            return Error.NO_CMD_ERR;
+        };
+    } else {
+        return Error.NO_CMD_ERR;
+    }
+
+    if (options.command == Pagerank.pagerank) {
+        while (arguments_p.*.next()) |arg| {
+            if (arg.len > 2 and std.mem.eql( // argument is a flag
+                u8,
+                arg[0..2],
+                "-f",
+            )) {
+                options.do_serial = set_flag(
+                    arg,
+                    &[_][]const u8{
+                        "-fserial",
+                        "-fs",
+                    },
+                ) orelse options.do_serial;
+
+                options.do_serial = !(set_flag(
+                    arg,
+                    &[_][]const u8{
+                        "-fparallel",
+                        "-fp",
+                    },
+                ) orelse !options.do_serial);
+            } else if (arg.len > 2 and std.mem.eql( // argument is an option
+                u8,
+                arg[0..2],
+                "--",
+            )) {
+                const next_arg = arguments_p.*.next();
+
+                // File path to save the data too
+                options.file_path = try set_option(
+                    arg,
+                    next_arg,
+                    []const u8,
+                    &[_][]const u8{
+                        "--filepath",
+                        "--f",
+                    },
+                ) orelse options.file_path;
+
+                // How many iterations to run the algorithm for
+                options.iterations = try set_option(
+                    arg,
+                    next_arg,
+                    u64,
+                    &[_][]const u8{
+                        "--iter",
+                        "--n",
+                    },
+                ) orelse options.iterations;
+
+                // The dumping factor
+                options.dumping = try set_option(
+                    arg,
+                    next_arg,
+                    f64,
+                    &[_][]const u8{
+                        "--dumping",
+                        "--d",
+                    },
+                ) orelse options.dumping;
+
+                // The x dimension of the matrix
+                options.dims = [_]u64{
+                    try set_option(
+                        arg,
+                        next_arg,
+                        u64,
+                        &[_][]const u8{
+                            "--x",
+                        },
+                    ) orelse options.dims[0],
+                    try set_option(
+                        arg,
+                        next_arg,
+                        u64,
+                        &[_][]const u8{
+                            "--y",
+                        },
+                    ) orelse options.dims[1],
+                };
+
+                // Tries for the experiment
+                options.tries = try set_option(
+                    arg,
+                    next_arg,
+                    u64,
+                    &[_][]const u8{
+                        "--tries",
+                        "--t",
+                    },
+                ) orelse options.tries;
+            } else {
+                try stdout.print(
+                    "INVALID ARGUMENT: {s}. Did you enter a command? Commands must be entered as the first argument!\n",
+                    .{arg},
+                );
+
+                return Error.INVALID_CMD_ARG_ERR;
+            }
+        }
     }
 
     return options;
@@ -249,14 +269,16 @@ fn print_help(options: Options) Error!void {
     stdout.print(
         \\Parallel Systems Postgrad Course -- Extra Project -- Christoforos-Marios Mamaloukas
         \\USAGE:
-        \\  {s} [COMMAND] [OPTIONS.. | FLAGS..]
+        \\  {s} <COMMAND> [(<OPTION> <VALUE>).. | <FLAG>..]
         \\Available commands:
         \\  * help: Shows the current message
         \\  * run: Run the algorithm with the passed parameters
         \\Available options:
+        \\  -> run:
         \\  * --file <path>, --f <path>: Where to save the experiment data
         \\  * --iter <number>, --n <number>: How many iterations to run the algorithm
         \\  * --tries <number>, --t <number>: How many times to run the experiment
+        \\
     ,
         .{
             options.app_name,

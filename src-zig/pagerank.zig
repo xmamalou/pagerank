@@ -86,9 +86,11 @@ fn pagerank_serial(
         );
     }
 
+    _ = matrix.multiply_factor(options.dumping);
+
     const start = std.time.milliTimestamp();
     for (0..options.iterations) |_| {
-        var interm_matrix = try matrix.multiply_factor(options.dumping)
+        var interm_matrix = try matrix
             .multiply_matrix(allocator, initial_vec);
         defer interm_matrix.destroy(allocator);
 
@@ -98,7 +100,7 @@ fn pagerank_serial(
 
     for (0..matrix.x) |i| {
         try stdout.print(
-            "x[{d}] = {d}\n",
+            "x[{d}] = {d:.3}\n",
             .{
                 i,
                 initial_vec.get(i, 0),

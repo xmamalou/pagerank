@@ -81,7 +81,7 @@ pub inline fn destroy(
     self: Matrix,
     allocator: std.mem.Allocator,
 ) void {
-    if (self.data != null) allocator.free(self.data.?);
+    if (self.data) |data| allocator.free(data);
 }
 
 /// Copy a matrix to this one
@@ -186,8 +186,7 @@ pub fn multiply_matrix(
                     var sum: f64 = 0.0;
                     for (0..self.y) |k| {
                         sum += self.get(i, k) * self.get(k, j);
-                    }
-                    break :value sum;
+                    } else break :value sum;
                 },
             );
         }

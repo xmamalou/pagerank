@@ -1,5 +1,5 @@
 /*
-    Parallel Systems Exercise Batch 2 -- Solutions to Batch 2 of Exercises for the Parallel
+    Parallel Systems Extracurricular Project -- Pagerank implementation in the context of the Parallel
     Systems Course of the "Computer Engineering" Masters Programme of NKUA
     Copyright (C) 2025 Christoforos-Marios Mamaloukas
 

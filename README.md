@@ -2,6 +2,9 @@
 
 This is my pagerank implementation for the extra project of the "Parallel Systems" course of the Computer Engineering Masters of NKUA.
 
+## PREREQUISITES 
+This project uses OpenMp which is pretty much available for the compilers in most modern Linux distros. If you don't have it, you need to install it!
+
 ## HOW TO BUILD
 This project has two versions: A C++ version and a Zig version. Building both is easy.
 

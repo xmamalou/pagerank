@@ -20,7 +20,9 @@
 #ifndef _TYPES_HXX_
 #define _TYPES_HXX_
 
+#include <cstdint>
 #include <string_view>
+#include <vector>
 
 #include <stdint.h>
 
@@ -46,6 +48,8 @@ namespace utility {
       NO_VALUE_ERR = 3,
       BAD_VALUE_ERR = 4,
       BAD_DUMPING_FAC_ERR = 5,
+      OUT_OF_BOUNDS_ERR = 6,
+      WRONG_DIMS_ERR = 7,
     };
     // --- FIELDS --- //
     std::string_view erroneous{};
@@ -53,6 +57,47 @@ namespace utility {
   };
 
   using Command = void (*)(const Options&);
+
+  class Matrix {
+    private:
+      std::vector<double> data;
+      uint32_t            dims[2];
+
+    public:
+      Matrix(
+        const uint32_t x,
+        const uint32_t y);
+
+      /// Access the element at (x, y)
+      auto operator()(
+        const uint32_t x,
+        const uint32_t y) -> double&;
+
+      template<uint32_t dim>
+      auto get_dimension() const -> uint32_t;
+
+      // Serial matrix operations
+
+      auto operator=(Matrix&) -> Matrix&;
+      auto operator+=(Matrix&) -> Matrix&;
+      auto operator*(const double factor) -> Matrix&;
+      auto operator*(Matrix&) -> Matrix;
+
+      // Parallel matrix operations
+
+      auto copy_paral(
+        Matrix&,
+        const uint32_t threads) -> Matrix&;
+      auto add_paral(
+        Matrix&,
+        const uint32_t threads) -> Matrix&;
+      auto mul_paral(
+        const double factor,
+        const uint32_t threads) -> Matrix&;
+      auto mul_paral(
+        Matrix&,
+        const uint32_t threads) -> Matrix;
+  };
 }
 
 #endif /* _TYPES_HXX */

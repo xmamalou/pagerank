@@ -69,12 +69,12 @@ namespace utility {
         const uint32_t y);
 
       /// Access the element at (x, y)
-      auto operator()(
+      inline auto operator()(
         const uint32_t x,
         const uint32_t y) -> double&;
 
       template<uint32_t dim>
-      auto get_dimension() const -> uint32_t;
+      inline auto get_dimension() const -> uint32_t;
 
       // Serial matrix operations
 

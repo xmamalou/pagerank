@@ -22,7 +22,6 @@
 #include <vector>
 #include <utility>
 #include <charconv>
-#include <algorithm>
 #include <cstdio>
 
 #include <stdint.h>
@@ -86,19 +85,21 @@ auto main(int argc, char** argv) -> int {
     command(options);
   } catch (Error err) {
     switch (err.error) {
-    case ErrorCode::WRONG_COMMAND_ERR:
-      std::cout << "\x1b[31mERROR!! Command " << err.erroneous << " is not recognized!\n";
-      break;
-    case ErrorCode::WRONG_OPTION_ERR:
-      std::cout << "\x1b[31mERROR!! Option " << err.erroneous << " is not recognized!\n";
-      break;
-    case ErrorCode::NO_VALUE_ERR:
-      std::cout << "\x1b[31mERROR!! Option " << err.erroneous << " has no value!\n";
-      break;
-    case ErrorCode::BAD_VALUE_ERR:
-      std::cout << "\x1b[31mERROR!! Value " << err.erroneous << " is badly formed or out of range!\n";
-    case ErrorCode::BAD_DUMPING_FAC_ERR:
-      std::cout << "\x1b[31mERROR!! Dumping factor needs to be between 0 and 1 (exclusive)!\n";
+      case ErrorCode::WRONG_COMMAND_ERR:
+        std::cerr << "\x1b[31mERROR!! Command " << err.erroneous << " is not recognized!\n";
+        break;
+      case ErrorCode::WRONG_OPTION_ERR:
+        std::cerr << "\x1b[31mERROR!! Option " << err.erroneous << " is not recognized!\n";
+        break;
+      case ErrorCode::NO_VALUE_ERR:
+        std::cerr << "\x1b[31mERROR!! Option " << err.erroneous << " has no value!\n";
+        break;
+      case ErrorCode::BAD_VALUE_ERR:
+        std::cerr << "\x1b[31mERROR!! Value " << err.erroneous << " is badly formed or out of range!\n";
+      case ErrorCode::BAD_DUMPING_FAC_ERR:
+        std::cerr << "\x1b[31mERROR!! Dumping factor needs to be between 0 and 1 (exclusive)!\n";
+      default:
+        std::cerr << "\x1b[31mERROR!! ERROR!! ERROR!!\n";
     }
 
     const auto options = utility::Options{

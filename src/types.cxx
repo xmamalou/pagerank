@@ -16,7 +16,7 @@ auto Matrix::operator()(
     if (x >= dims[0] || y >= dims[1])
         throw Error{ std::string_view(__FILE__), Error::ErrorCode::OUT_OF_BOUNDS_ERR };
 
-    return this->data[x];
+    return this->data[x + dims[0]*y];
 }
 
 template<uint32_t dim>

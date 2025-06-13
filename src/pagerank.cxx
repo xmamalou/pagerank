@@ -57,12 +57,26 @@ auto exe::pagerank(const utility::Options& options) -> void {
 
   std::random_device random;
   std::mt19937 generator(random());
-  std::uniform_real_distribution<double> dist(0, 1);
+  std::uniform_int_distribution<uint64_t> dist(0, 1000);
 
   for (uint32_t i{ 0 }; i < matrix.get_dimension<0>(); i++) {
     for (uint32_t j{ 0 }; j < matrix.get_dimension<1>(); j++) {
-      matrix(i, j) = dist(generator);
+      matrix(i, j) = static_cast<double>(dist(generator));
     }
+  }
+
+  // now we have to normalize the matrix
+  uint64_t total_in_column{ 0 };
+  for (uint32_t i{ 0 }; i < matrix.get_dimension<1>(); i++) {
+      for (uint32_t j{ 0 }; j < matrix.get_dimension<0>(); j++) {
+        total_in_column += static_cast<uint64_t>(matrix(j, i));
+      }
+
+      for (uint32_t j{ 0 }; j < matrix.get_dimension<0>(); j++) {
+        matrix(j, i) /= static_cast<double>(total_in_column);
+      }
+
+      total_in_column = 0;
   }
 
   (options.do_serial
